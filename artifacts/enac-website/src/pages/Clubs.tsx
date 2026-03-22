@@ -294,8 +294,24 @@ function ClubModal({ club, onClose, joined, onJoin }: {
 export default function Clubs() {
   const [selectedClub, setSelectedClub] = useState<Club | null>(null);
   const [joinedClubs, setJoinedClubs] = useState<string[]>([]);
-  const [clubs] = useState<Club[]>(defaultClubs);
+  const [clubs, setClubs] = useState<Club[]>(defaultClubs);
   const { user } = useAuth();
+
+  useEffect(() => {
+    const fetchClubLeadership = async () => {
+      const updated = await Promise.all(
+        defaultClubs.map(async (club) => {
+          const snap = await getDoc(doc(db, "clubs", club.id));
+          if (snap.exists()) {
+            return { ...club, leadership: snap.data() as Club["leadership"] };
+          }
+          return club;
+        })
+      );
+      setClubs(updated);
+    };
+    fetchClubLeadership();
+  }, []);
 
   useEffect(() => {
     if (!user) return;

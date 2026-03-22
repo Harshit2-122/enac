@@ -103,7 +103,7 @@ export default function Admin() {
   const fetchClubLeadership = async () => {
     const result: Record<string, ClubLeadership> = {};
     for (const id of CLUB_IDS) {
-      const snap = await getDoc(doc(db, "clubLeadership", id));
+      const snap = await getDoc(doc(db, "clubs", id));
       if (snap.exists()) {
         result[id] = snap.data() as ClubLeadership;
       } else {
@@ -138,7 +138,7 @@ export default function Admin() {
   const handleSaveClub = async () => {
     if (!editingClub) return;
     setSavingClub(true);
-    await setDoc(doc(db, "clubLeadership", editingClub), editLeadership);
+    await setDoc(doc(db, "clubs", editingClub), editLeadership);
     setClubLeadership((prev) => ({ ...prev, [editingClub]: editLeadership }));
     setEditingClub(null);
     setSavingClub(false);
