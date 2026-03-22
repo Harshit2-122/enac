@@ -48,6 +48,32 @@ Every package extends `tsconfig.base.json` which sets `composite: true`. The roo
 - `pnpm run build` — runs `typecheck` first, then recursively runs `build` in all packages that define it
 - `pnpm run typecheck` — runs `tsc --build --emitDeclarationOnly` using project references
 
+## Artifacts
+
+### `artifacts/enac-website` (`@workspace/enac-website`)
+
+React + Vite + Firebase website for ENAC (Engineers Network at CURAJ).
+
+- **Firebase project**: `enac-d6ade`
+- **Auth**: Firebase Authentication (email/password) — only `@curaj.ac.in` emails allowed at signup
+- **Database**: Firestore — `users/{uid}` stores name, email, department, branch, clubsJoined[], createdAt
+- **Club leadership**: Stored in Firestore `clubLeadership/{clubId}` — updatable by admin
+- **Core team**: Stored in Firestore `settings/coreTeam` — updatable by admin
+- **Admin email**: `2025btece008@curaj.ac.in` — has access to `/admin` panel
+- **5 Technical Clubs**: aiml, robotics, webdev, cyber, competitive (Civil/Electrical/Mechanical removed)
+- **Club leadership structure**: President, Vice President, Faculty Advisor per club
+- **Stats**: 5 Technical Clubs, 250+ Active Members, 20+ Yearly Events, 15+ Industry Partners
+- **Admin Panel** (`/admin`): Members table (with clubs joined), Club Leadership editor, Core Team editor, CSV export
+
+Key files:
+- `src/lib/firebase.ts` — Firebase config + Firestore init
+- `src/contexts/AuthContext.tsx` — Auth with Firestore user creation on signup
+- `src/pages/Home.tsx` — Hero with slider, marquee, stats, pillars, CTA
+- `src/pages/Login.tsx` — Login/Signup with @curaj.ac.in validation, branch dropdown
+- `src/pages/Clubs.tsx` — 5 clubs with modal detail, Firestore join, VP/Advisor shown
+- `src/pages/Admin.tsx` — Admin panel (members, club leadership, core team)
+- `src/components/layout/Navbar.tsx` — Admin Panel link shown for admin user
+
 ## Packages
 
 ### `artifacts/api-server` (`@workspace/api-server`)
