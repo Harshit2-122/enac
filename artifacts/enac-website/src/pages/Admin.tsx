@@ -3,13 +3,13 @@ import { motion } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLocation } from "wouter";
 import {
-  collection, getDocs, doc, updateDoc, getDoc, setDoc
+  collection, getDocs, doc, getDoc, setDoc, addDoc, deleteDoc, serverTimestamp, orderBy, query
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import {
   Users, Shield, RefreshCw, Download, User, Mail, GraduationCap,
   Building2, Calendar, Edit2, Save, X, ChevronDown, ChevronUp,
-  Cpu, Bot, Globe, Code2
+  Cpu, Bot, Globe, Code2, Plus, Trash2, ImageOff, MapPin
 } from "lucide-react";
 
 const ADMIN_EMAIL = "2025btece008@curaj.ac.in";
@@ -52,6 +52,17 @@ interface CoreMember {
   photo: string;
 }
 
+interface Event {
+  id: string;
+  name: string;
+  date: string;
+  description: string;
+  photoUrl: string;
+  venue?: string;
+}
+
+const emptyEvent: Omit<Event, "id"> = { name: "", date: "", description: "", photoUrl: "", venue: "" };
+
 const defaultLeadership: ClubLeadership = {
   president: { name: "", branch: "", email: "" },
   vicePresident: { name: "", branch: "", email: "" },
@@ -63,7 +74,7 @@ export default function Admin() {
   const [, navigate] = useLocation();
   const [members, setMembers] = useState<Member[]>([]);
   const [loadingMembers, setLoadingMembers] = useState(true);
-  const [activeTab, setActiveTab] = useState<"members" | "clubs" | "team">("members");
+  const [activeTab, setActiveTab] = useState<"members" | "clubs" | "team" | "events">("members");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedClub, setSelectedClub] = useState<string>("all");
   const [expandedMember, setExpandedMember] = useState<string | null>(null);
@@ -78,6 +89,14 @@ export default function Admin() {
   const [editTeamMember, setEditTeamMember] = useState<CoreMember>({ name: "", role: "", photo: "" });
   const [savingTeam, setSavingTeam] = useState(false);
 
+  const [events, setEvents] = useState<Event[]>([]);
+  const [loadingEvents, setLoadingEvents] = useState(false);
+  const [showEventForm, setShowEventForm] = useState(false);
+  const [editingEvent, setEditingEvent] = useState<Event | null>(null);
+  const [eventForm, setEventForm] = useState<Omit<Event, "id">>(emptyEvent);
+  const [savingEvent, setSavingEvent] = useState(false);
+  const [deletingEventId, setDeletingEventId] = useState<string | null>(null);
+
   useEffect(() => {
     if (!loading && (!user || user.email !== ADMIN_EMAIL)) {
       navigate("/");
@@ -89,6 +108,7 @@ export default function Admin() {
     fetchMembers();
     fetchClubLeadership();
     fetchCoreTeam();
+    fetchEvents();
   }, [user]);
 
   const fetchMembers = async () => {
@@ -165,6 +185,53 @@ export default function Admin() {
     setCoreTeam(updated);
   };
 
+  const fetchEvents = async () => {
+    setLoadingEvents(true);
+    try {
+      const q = query(collection(db, "events"), orderBy("date", "desc"));
+      const snap = await getDocs(q);
+      const data: Event[] = [];
+      snap.forEach((d) => data.push({ id: d.id, ...d.data() } as Event));
+      setEvents(data);
+    } catch {
+      setEvents([]);
+    } finally {
+      setLoadingEvents(false);
+    }
+  };
+
+  const handleSaveEvent = async () => {
+    if (!eventForm.name || !eventForm.date) return;
+    setSavingEvent(true);
+    try {
+      if (editingEvent) {
+        await setDoc(doc(db, "events", editingEvent.id), { ...eventForm, updatedAt: serverTimestamp() });
+        setEvents((prev) => prev.map((e) => e.id === editingEvent.id ? { ...e, ...eventForm } : e));
+      } else {
+        const ref = await addDoc(collection(db, "events"), { ...eventForm, createdAt: serverTimestamp() });
+        setEvents((prev) => [{ id: ref.id, ...eventForm }, ...prev]);
+      }
+      setShowEventForm(false);
+      setEditingEvent(null);
+      setEventForm(emptyEvent);
+    } finally {
+      setSavingEvent(false);
+    }
+  };
+
+  const handleDeleteEvent = async (eventId: string) => {
+    setDeletingEventId(eventId);
+    await deleteDoc(doc(db, "events", eventId));
+    setEvents((prev) => prev.filter((e) => e.id !== eventId));
+    setDeletingEventId(null);
+  };
+
+  const openEditEvent = (event: Event) => {
+    setEditingEvent(event);
+    setEventForm({ name: event.name, date: event.date, description: event.description, photoUrl: event.photoUrl, venue: event.venue ?? "" });
+    setShowEventForm(true);
+  };
+
   const exportCSV = () => {
     const headers = ["Name", "Email", "Department", "Branch", "Clubs Joined", "Registration Date"];
     const rows = filteredMembers.map((m) => [
@@ -230,6 +297,7 @@ export default function Admin() {
             { id: "members", label: "Registered Members", icon: Users },
             { id: "clubs", label: "Club Leadership", icon: Shield },
             { id: "team", label: "Core Team", icon: User },
+            { id: "events", label: "Events", icon: Calendar },
           ].map((tab) => (
             <button
               key={tab.id}
@@ -643,6 +711,196 @@ export default function Admin() {
                   </div>
                 </div>
               ))}
+            </div>
+          </motion.div>
+        )}
+
+        {/* Events Tab */}
+        {activeTab === "events" && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-4">
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-muted-foreground text-sm">Add and manage events shown on the Events page.</p>
+              <div className="flex gap-2">
+                <button
+                  onClick={fetchEvents}
+                  className="flex items-center gap-2 px-4 py-2 rounded-xl border border-border text-sm font-medium hover:bg-secondary transition-colors"
+                >
+                  <RefreshCw className="w-4 h-4" />
+                  Refresh
+                </button>
+                <button
+                  onClick={() => { setEditingEvent(null); setEventForm(emptyEvent); setShowEventForm(true); }}
+                  className="flex items-center gap-2 px-4 py-2 rounded-xl bg-primary text-white text-sm font-semibold hover:opacity-90 transition-colors shadow-sm"
+                >
+                  <Plus className="w-4 h-4" />
+                  Add Event
+                </button>
+              </div>
+            </div>
+
+            {/* Event Form */}
+            {showEventForm && (
+              <div className="bg-card border border-primary/30 rounded-2xl p-6 shadow-lg">
+                <h3 className="font-bold text-foreground mb-5 text-lg flex items-center gap-2">
+                  <Calendar className="w-5 h-5 text-primary" />
+                  {editingEvent ? "Edit Event" : "Add New Event"}
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                  <div>
+                    <label className="block text-xs font-semibold text-muted-foreground mb-1.5">Event Name *</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. ENAC Hackathon 2025"
+                      value={eventForm.name}
+                      onChange={(e) => setEventForm((p) => ({ ...p, name: e.target.value }))}
+                      className="w-full px-3 py-2.5 rounded-xl border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-muted-foreground mb-1.5">Date *</label>
+                    <input
+                      type="date"
+                      value={eventForm.date}
+                      onChange={(e) => setEventForm((p) => ({ ...p, date: e.target.value }))}
+                      className="w-full px-3 py-2.5 rounded-xl border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-muted-foreground mb-1.5">Venue (optional)</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. CURAJ Main Auditorium"
+                      value={eventForm.venue ?? ""}
+                      onChange={(e) => setEventForm((p) => ({ ...p, venue: e.target.value }))}
+                      className="w-full px-3 py-2.5 rounded-xl border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-muted-foreground mb-1.5">Photo URL (optional)</label>
+                    <input
+                      type="url"
+                      placeholder="https://..."
+                      value={eventForm.photoUrl}
+                      onChange={(e) => setEventForm((p) => ({ ...p, photoUrl: e.target.value }))}
+                      className="w-full px-3 py-2.5 rounded-xl border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
+                    />
+                  </div>
+                  <div className="md:col-span-2">
+                    <label className="block text-xs font-semibold text-muted-foreground mb-1.5">Description *</label>
+                    <textarea
+                      placeholder="Describe the event — what it's about, who can participate, highlights..."
+                      value={eventForm.description}
+                      onChange={(e) => setEventForm((p) => ({ ...p, description: e.target.value }))}
+                      rows={4}
+                      className="w-full px-3 py-2.5 rounded-xl border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 resize-none"
+                    />
+                  </div>
+                </div>
+
+                {/* Photo Preview */}
+                {eventForm.photoUrl && (
+                  <div className="mb-4">
+                    <p className="text-xs font-semibold text-muted-foreground mb-2">Photo Preview</p>
+                    <div className="w-full max-w-sm h-40 rounded-2xl overflow-hidden border border-border bg-muted">
+                      <img
+                        src={eventForm.photoUrl}
+                        alt="Preview"
+                        className="w-full h-full object-cover"
+                        onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                      />
+                    </div>
+                  </div>
+                )}
+
+                <div className="flex gap-3">
+                  <button
+                    onClick={handleSaveEvent}
+                    disabled={savingEvent || !eventForm.name || !eventForm.date}
+                    className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-primary text-white text-sm font-semibold hover:opacity-90 disabled:opacity-50 transition-colors"
+                  >
+                    <Save className="w-4 h-4" />
+                    {savingEvent ? "Saving..." : editingEvent ? "Update Event" : "Publish Event"}
+                  </button>
+                  <button
+                    onClick={() => { setShowEventForm(false); setEditingEvent(null); setEventForm(emptyEvent); }}
+                    className="flex items-center gap-2 px-5 py-2.5 rounded-xl border border-border text-sm font-medium hover:bg-secondary transition-colors"
+                  >
+                    <X className="w-4 h-4" />
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Events List */}
+            {loadingEvents ? (
+              <div className="flex items-center justify-center py-16">
+                <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+              </div>
+            ) : events.length === 0 ? (
+              <div className="text-center py-16 bg-muted/20 rounded-3xl border border-border/50">
+                <Calendar className="w-12 h-12 text-muted-foreground/40 mx-auto mb-3" />
+                <p className="text-lg font-semibold text-foreground mb-1">No events yet</p>
+                <p className="text-sm text-muted-foreground">Click "Add Event" above to publish your first event.</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                {events.map((event) => (
+                  <div key={event.id} className="bg-card border border-border/60 rounded-2xl shadow-sm overflow-hidden hover:shadow-md transition-shadow">
+                    {event.photoUrl ? (
+                      <div className="w-full h-40 bg-muted overflow-hidden">
+                        <img
+                          src={event.photoUrl}
+                          alt={event.name}
+                          className="w-full h-full object-cover"
+                          onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                        />
+                      </div>
+                    ) : (
+                      <div className="w-full h-24 bg-muted flex items-center justify-center">
+                        <ImageOff className="w-8 h-8 text-muted-foreground opacity-30" />
+                      </div>
+                    )}
+                    <div className="p-4">
+                      <div className="flex items-center gap-2 mb-2 flex-wrap">
+                        <span className="inline-flex items-center gap-1 text-xs font-semibold text-primary bg-primary/10 px-2.5 py-1 rounded-full">
+                          <Calendar className="w-3 h-3" />
+                          {new Date(event.date).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
+                        </span>
+                        {event.venue && (
+                          <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+                            <MapPin className="w-3 h-3" />
+                            {event.venue}
+                          </span>
+                        )}
+                      </div>
+                      <h4 className="font-bold text-foreground text-sm mb-1.5 leading-tight">{event.name}</h4>
+                      <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">{event.description}</p>
+                      <div className="flex gap-2 mt-4">
+                        <button
+                          onClick={() => openEditEvent(event)}
+                          className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl border border-border text-xs font-medium text-foreground hover:bg-secondary transition-colors"
+                        >
+                          <Edit2 className="w-3.5 h-3.5" /> Edit
+                        </button>
+                        <button
+                          onClick={() => handleDeleteEvent(event.id)}
+                          disabled={deletingEventId === event.id}
+                          className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl border border-red-500/30 text-xs font-medium text-red-500 hover:bg-red-500/10 disabled:opacity-50 transition-colors"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                          {deletingEventId === event.id ? "Deleting..." : "Delete"}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <div className="mt-4 p-4 bg-amber-500/10 border border-amber-500/20 rounded-xl text-sm text-amber-700 dark:text-amber-400">
+              <strong>Note:</strong> Make sure your Firestore rules include the <code className="bg-amber-500/20 px-1 py-0.5 rounded text-xs">events</code> collection. Add this to your rules:
+              <pre className="mt-2 text-xs bg-amber-500/10 rounded-lg p-3 overflow-x-auto">{`match /events/{eventId} {\n  allow read: if true;\n  allow write: if isAdmin();\n}`}</pre>
             </div>
           </motion.div>
         )}
