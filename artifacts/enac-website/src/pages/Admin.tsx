@@ -74,7 +74,7 @@ export default function Admin() {
   const [, navigate] = useLocation();
   const [members, setMembers] = useState<Member[]>([]);
   const [loadingMembers, setLoadingMembers] = useState(true);
-  const [activeTab, setActiveTab] = useState<"members" | "clubs" | "team" | "events">("members");
+  const [activeTab, setActiveTab] = useState<"members" | "clubs" | "team" | "advisory" | "events">("members");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedClub, setSelectedClub] = useState<string>("all");
   const [expandedMember, setExpandedMember] = useState<string | null>(null);
@@ -88,6 +88,11 @@ export default function Admin() {
   const [editingTeamIndex, setEditingTeamIndex] = useState<number | null>(null);
   const [editTeamMember, setEditTeamMember] = useState<CoreMember>({ name: "", role: "", photo: "" });
   const [savingTeam, setSavingTeam] = useState(false);
+
+  const [advisoryBoard, setAdvisoryBoard] = useState<CoreMember[]>([]);
+  const [editingAdvisoryIndex, setEditingAdvisoryIndex] = useState<number | null>(null);
+  const [editAdvisoryMember, setEditAdvisoryMember] = useState<CoreMember>({ name: "", role: "", photo: "" });
+  const [savingAdvisory, setSavingAdvisory] = useState(false);
 
   const [events, setEvents] = useState<Event[]>([]);
   const [loadingEvents, setLoadingEvents] = useState(false);
@@ -108,6 +113,7 @@ export default function Admin() {
     fetchMembers();
     fetchClubLeadership();
     fetchCoreTeam();
+    fetchAdvisoryBoard();
     fetchEvents();
   }, [user]);
 
@@ -183,6 +189,36 @@ export default function Admin() {
     const updated = coreTeam.filter((_, i) => i !== index);
     await setDoc(doc(db, "settings", "coreTeam"), { members: updated });
     setCoreTeam(updated);
+  };
+
+  const fetchAdvisoryBoard = async () => {
+    const snap = await getDoc(doc(db, "settings", "advisoryBoard"));
+    if (snap.exists()) {
+      setAdvisoryBoard(snap.data().members ?? []);
+    } else {
+      setAdvisoryBoard([]);
+    }
+  };
+
+  const handleSaveAdvisoryMember = async () => {
+    if (editingAdvisoryIndex === null) return;
+    setSavingAdvisory(true);
+    const updated = [...advisoryBoard];
+    if (editingAdvisoryIndex === -1) {
+      updated.push(editAdvisoryMember);
+    } else {
+      updated[editingAdvisoryIndex] = editAdvisoryMember;
+    }
+    await setDoc(doc(db, "settings", "advisoryBoard"), { members: updated });
+    setAdvisoryBoard(updated);
+    setEditingAdvisoryIndex(null);
+    setSavingAdvisory(false);
+  };
+
+  const handleRemoveAdvisoryMember = async (index: number) => {
+    const updated = advisoryBoard.filter((_, i) => i !== index);
+    await setDoc(doc(db, "settings", "advisoryBoard"), { members: updated });
+    setAdvisoryBoard(updated);
   };
 
   const fetchEvents = async () => {
@@ -297,6 +333,7 @@ export default function Admin() {
             { id: "members", label: "Registered Members", icon: Users },
             { id: "clubs", label: "Club Leadership", icon: Shield },
             { id: "team", label: "Core Team", icon: User },
+            { id: "advisory", label: "Advisory Board", icon: GraduationCap },
             { id: "events", label: "Events", icon: Calendar },
           ].map((tab) => (
             <button
@@ -712,6 +749,118 @@ export default function Admin() {
                 </div>
               ))}
             </div>
+          </motion.div>
+        )}
+
+        {/* Advisory Board Tab */}
+        {activeTab === "advisory" && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-4">
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-muted-foreground text-sm">Manage the ENAC advisory board — faculty advisors and mentors.</p>
+              <button
+                onClick={() => { setEditingAdvisoryIndex(-1); setEditAdvisoryMember({ name: "", role: "", photo: "" }); }}
+                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-primary text-white text-sm font-semibold hover:opacity-90 transition-colors shadow-sm"
+              >
+                + Add Advisor
+              </button>
+            </div>
+
+            {editingAdvisoryIndex !== null && (
+              <div className="bg-card border border-primary/30 rounded-2xl p-6 shadow-lg">
+                <h3 className="font-bold text-foreground mb-4">
+                  {editingAdvisoryIndex === -1 ? "Add New Advisor" : "Edit Advisor"}
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                  <div>
+                    <label className="block text-xs font-semibold text-muted-foreground mb-1.5">Full Name</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Dr. Rajesh Kumar"
+                      value={editAdvisoryMember.name}
+                      onChange={(e) => setEditAdvisoryMember((prev) => ({ ...prev, name: e.target.value }))}
+                      className="w-full px-3 py-2.5 rounded-xl border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-muted-foreground mb-1.5">Role / Designation</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Faculty Advisor, Dean"
+                      value={editAdvisoryMember.role}
+                      onChange={(e) => setEditAdvisoryMember((prev) => ({ ...prev, role: e.target.value }))}
+                      className="w-full px-3 py-2.5 rounded-xl border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-muted-foreground mb-1.5">Photo URL (optional)</label>
+                    <input
+                      type="url"
+                      placeholder="https://..."
+                      value={editAdvisoryMember.photo}
+                      onChange={(e) => setEditAdvisoryMember((prev) => ({ ...prev, photo: e.target.value }))}
+                      className="w-full px-3 py-2.5 rounded-xl border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
+                    />
+                  </div>
+                </div>
+                <div className="flex gap-3">
+                  <button
+                    onClick={handleSaveAdvisoryMember}
+                    disabled={savingAdvisory}
+                    className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-primary text-white text-sm font-semibold hover:opacity-90 transition-colors"
+                  >
+                    <Save className="w-4 h-4" />
+                    {savingAdvisory ? "Saving..." : "Save Advisor"}
+                  </button>
+                  <button
+                    onClick={() => setEditingAdvisoryIndex(null)}
+                    className="flex items-center gap-2 px-5 py-2.5 rounded-xl border border-border text-sm font-medium hover:bg-secondary transition-colors"
+                  >
+                    <X className="w-4 h-4" />
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {advisoryBoard.length === 0 && editingAdvisoryIndex === null ? (
+              <div className="text-center py-16 bg-muted/20 rounded-3xl border border-border/50">
+                <GraduationCap className="w-12 h-12 text-muted-foreground/40 mx-auto mb-3" />
+                <p className="text-lg font-semibold text-foreground mb-1">No advisors yet</p>
+                <p className="text-sm text-muted-foreground">Click "Add Advisor" to add your first advisory board member.</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {advisoryBoard.map((member, i) => (
+                  <div key={i} className="bg-card border border-border/60 rounded-2xl p-5 shadow-sm flex items-start gap-4">
+                    {member.photo ? (
+                      <img src={member.photo} alt={member.name} className="w-14 h-14 rounded-full object-cover border-2 border-border" />
+                    ) : (
+                      <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center border-2 border-border">
+                        <GraduationCap className="w-7 h-7 text-primary" />
+                      </div>
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-foreground truncate">{member.name}</p>
+                      <p className="text-xs text-primary font-medium mt-0.5">{member.role}</p>
+                      <div className="flex gap-2 mt-3">
+                        <button
+                          onClick={() => { setEditingAdvisoryIndex(i); setEditAdvisoryMember(member); }}
+                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border text-xs font-medium text-foreground hover:bg-secondary transition-colors"
+                        >
+                          <Edit2 className="w-3 h-3" /> Edit
+                        </button>
+                        <button
+                          onClick={() => handleRemoveAdvisoryMember(i)}
+                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-red-500/30 text-xs font-medium text-red-500 hover:bg-red-500/10 transition-colors"
+                        >
+                          <X className="w-3 h-3" /> Remove
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </motion.div>
         )}
 

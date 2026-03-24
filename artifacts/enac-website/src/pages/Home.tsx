@@ -10,7 +10,7 @@ import {
 const slides = [
   {
     tag: "🚀 Latest Announcement",
-    title: "ENAC Tech Fest 2025 is Coming!",
+    title: "ENAC Tech Fest is Coming Soon",
     desc: "Annual tech festival with hackathons, workshops, robotics battles, and industry talks. Get ready to innovate.",
     cta: { label: "Know More", href: "/events" },
     gradient: "from-blue-600 via-primary to-indigo-700",
