@@ -7,17 +7,7 @@ import { useAuth } from "@/contexts/AuthContext";
 const ENGINEERING_BRANCHES = [
   "B.Tech Computer Science & Engineering",
   "B.Tech Electronics & Communication Engineering",
-  "B.Tech Electrical Engineering",
-  "B.Tech Mechanical Engineering",
-  "B.Tech Civil Engineering",
-  "B.Tech Information Technology",
-  "B.Tech Chemical Engineering",
-  "B.Tech Biotechnology",
-  "M.Tech Computer Science & Engineering",
-  "M.Tech Electronics & Communication Engineering",
-  "M.Tech Electrical Engineering",
-  "M.Tech Mechanical Engineering",
-  "M.Tech Civil Engineering",
+  "B.Tech Biomedical Engineering",
 ];
 
 export default function Login() {

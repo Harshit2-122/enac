@@ -303,7 +303,13 @@ export default function Clubs() {
         defaultClubs.map(async (club) => {
           const snap = await getDoc(doc(db, "clubs", club.id));
           if (snap.exists()) {
-            return { ...club, leadership: snap.data() as Club["leadership"] };
+            const data = snap.data();
+            return {
+              ...club,
+              leadership: data as Club["leadership"],
+              whatsapp: data.whatsapp ?? club.whatsapp,
+              instagram: data.instagram ?? club.instagram,
+            };
           }
           return club;
         })

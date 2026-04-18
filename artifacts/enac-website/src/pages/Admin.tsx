@@ -9,7 +9,7 @@ import { db } from "@/lib/firebase";
 import {
   Users, Shield, RefreshCw, Download, User, Mail, GraduationCap,
   Building2, Calendar, Edit2, Save, X, ChevronDown, ChevronUp,
-  Cpu, Bot, Globe, Code2, Plus, Trash2, ImageOff, MapPin
+  Cpu, Bot, Globe, Code2, Plus, Trash2, ImageOff, MapPin, Instagram, MessageCircle
 } from "lucide-react";
 
 const ADMIN_EMAIL = "2025btece008@curaj.ac.in";
@@ -44,6 +44,8 @@ interface ClubLeadership {
   president: { name: string; branch: string; email: string };
   vicePresident: { name: string; branch: string; email: string };
   advisor: { name: string; designation: string; email: string };
+  whatsapp?: string;
+  instagram?: string;
 }
 
 interface CoreMember {
@@ -67,6 +69,8 @@ const defaultLeadership: ClubLeadership = {
   president: { name: "", branch: "", email: "" },
   vicePresident: { name: "", branch: "", email: "" },
   advisor: { name: "", designation: "", email: "" },
+  whatsapp: "",
+  instagram: "",
 };
 
 export default function Admin() {
@@ -572,74 +576,121 @@ export default function Admin() {
                   {!leadership ? (
                     <p className="text-muted-foreground text-sm">Loading...</p>
                   ) : isEditing ? (
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                      {(["president", "vicePresident", "advisor"] as const).map((role) => (
-                        <div key={role} className="space-y-3">
-                          <h4 className="text-xs font-bold uppercase tracking-widest text-primary">
-                            {role === "president" ? "President" : role === "vicePresident" ? "Vice President" : "Faculty Advisor"}
-                          </h4>
-                          <input
-                            type="text"
-                            placeholder="Name"
-                            value={editLeadership[role]?.name ?? ""}
-                            onChange={(e) => setEditLeadership((prev) => ({
-                              ...prev,
-                              [role]: { ...prev[role], name: e.target.value }
-                            }))}
-                            className="w-full px-3 py-2 rounded-xl border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
-                          />
-                          {role !== "advisor" ? (
+                    <div className="space-y-5">
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        {(["president", "vicePresident", "advisor"] as const).map((role) => (
+                          <div key={role} className="space-y-3">
+                            <h4 className="text-xs font-bold uppercase tracking-widest text-primary">
+                              {role === "president" ? "President" : role === "vicePresident" ? "Vice President" : "Faculty Advisor"}
+                            </h4>
                             <input
                               type="text"
-                              placeholder="Branch/Programme"
-                              value={(editLeadership[role] as { name: string; branch: string; email: string })?.branch ?? ""}
+                              placeholder="Name"
+                              value={editLeadership[role]?.name ?? ""}
                               onChange={(e) => setEditLeadership((prev) => ({
                                 ...prev,
-                                [role]: { ...prev[role], branch: e.target.value }
+                                [role]: { ...prev[role], name: e.target.value }
                               }))}
                               className="w-full px-3 py-2 rounded-xl border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
                             />
-                          ) : (
+                            {role !== "advisor" ? (
+                              <input
+                                type="text"
+                                placeholder="Branch/Programme"
+                                value={(editLeadership[role] as { name: string; branch: string; email: string })?.branch ?? ""}
+                                onChange={(e) => setEditLeadership((prev) => ({
+                                  ...prev,
+                                  [role]: { ...prev[role], branch: e.target.value }
+                                }))}
+                                className="w-full px-3 py-2 rounded-xl border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
+                              />
+                            ) : (
+                              <input
+                                type="text"
+                                placeholder="Designation"
+                                value={(editLeadership.advisor)?.designation ?? ""}
+                                onChange={(e) => setEditLeadership((prev) => ({
+                                  ...prev,
+                                  advisor: { ...prev.advisor, designation: e.target.value }
+                                }))}
+                                className="w-full px-3 py-2 rounded-xl border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
+                              />
+                            )}
                             <input
-                              type="text"
-                              placeholder="Designation"
-                              value={(editLeadership.advisor)?.designation ?? ""}
+                              type="email"
+                              placeholder="Email"
+                              value={editLeadership[role]?.email ?? ""}
                               onChange={(e) => setEditLeadership((prev) => ({
                                 ...prev,
-                                advisor: { ...prev.advisor, designation: e.target.value }
+                                [role]: { ...prev[role], email: e.target.value }
                               }))}
                               className="w-full px-3 py-2 rounded-xl border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
                             />
-                          )}
+                          </div>
+                        ))}
+                      </div>
+                      <div className="border-t border-border pt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <label className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-widest text-green-600 dark:text-green-400 mb-2">
+                            <MessageCircle className="w-3.5 h-3.5" /> WhatsApp Group Link
+                          </label>
                           <input
-                            type="email"
-                            placeholder="Email"
-                            value={editLeadership[role]?.email ?? ""}
-                            onChange={(e) => setEditLeadership((prev) => ({
-                              ...prev,
-                              [role]: { ...prev[role], email: e.target.value }
-                            }))}
-                            className="w-full px-3 py-2 rounded-xl border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
+                            type="url"
+                            placeholder="https://chat.whatsapp.com/..."
+                            value={editLeadership.whatsapp ?? ""}
+                            onChange={(e) => setEditLeadership((prev) => ({ ...prev, whatsapp: e.target.value }))}
+                            className="w-full px-3 py-2 rounded-xl border border-green-500/30 bg-background text-sm focus:outline-none focus:ring-2 focus:ring-green-500/30"
                           />
                         </div>
-                      ))}
+                        <div>
+                          <label className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-widest text-pink-500 mb-2">
+                            <Instagram className="w-3.5 h-3.5" /> Instagram Page Link
+                          </label>
+                          <input
+                            type="url"
+                            placeholder="https://www.instagram.com/..."
+                            value={editLeadership.instagram ?? ""}
+                            onChange={(e) => setEditLeadership((prev) => ({ ...prev, instagram: e.target.value }))}
+                            className="w-full px-3 py-2 rounded-xl border border-pink-500/30 bg-background text-sm focus:outline-none focus:ring-2 focus:ring-pink-500/30"
+                          />
+                        </div>
+                      </div>
                     </div>
                   ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      {[
-                        { label: "President", data: leadership.president, isAdvisor: false },
-                        { label: "Vice President", data: leadership.vicePresident, isAdvisor: false },
-                        { label: "Faculty Advisor", data: leadership.advisor, isAdvisor: true },
-                      ].map(({ label, data, isAdvisor }) => (
-                        <div key={label} className="bg-muted/40 rounded-xl p-4 border border-border/40">
-                          <p className="text-xs font-bold uppercase tracking-widest text-primary mb-2">{label}</p>
-                          <p className="font-medium text-foreground text-sm">{data?.name || "—"}</p>
-                          <p className="text-muted-foreground text-xs">
-                            {isAdvisor ? (data as { designation: string })?.designation : (data as { branch: string })?.branch}
-                          </p>
-                          <p className="text-primary text-xs mt-1">{data?.email}</p>
-                        </div>
-                      ))}
+                    <div className="space-y-4">
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        {[
+                          { label: "President", data: leadership.president, isAdvisor: false },
+                          { label: "Vice President", data: leadership.vicePresident, isAdvisor: false },
+                          { label: "Faculty Advisor", data: leadership.advisor, isAdvisor: true },
+                        ].map(({ label, data, isAdvisor }) => (
+                          <div key={label} className="bg-muted/40 rounded-xl p-4 border border-border/40">
+                            <p className="text-xs font-bold uppercase tracking-widest text-primary mb-2">{label}</p>
+                            <p className="font-medium text-foreground text-sm">{data?.name || "—"}</p>
+                            <p className="text-muted-foreground text-xs">
+                              {isAdvisor ? (data as { designation: string })?.designation : (data as { branch: string })?.branch}
+                            </p>
+                            <p className="text-primary text-xs mt-1">{data?.email}</p>
+                          </div>
+                        ))}
+                      </div>
+                      <div className="flex flex-wrap gap-3">
+                        {leadership.whatsapp && (
+                          <a href={leadership.whatsapp} target="_blank" rel="noopener noreferrer"
+                            className="inline-flex items-center gap-2 text-xs font-medium text-green-600 dark:text-green-400 bg-green-500/10 border border-green-500/20 px-3 py-1.5 rounded-full hover:bg-green-500/20 transition-colors">
+                            <MessageCircle className="w-3.5 h-3.5" /> WhatsApp Group Set
+                          </a>
+                        )}
+                        {leadership.instagram && (
+                          <a href={leadership.instagram} target="_blank" rel="noopener noreferrer"
+                            className="inline-flex items-center gap-2 text-xs font-medium text-pink-500 bg-pink-500/10 border border-pink-500/20 px-3 py-1.5 rounded-full hover:bg-pink-500/20 transition-colors">
+                            <Instagram className="w-3.5 h-3.5" /> Instagram Page Set
+                          </a>
+                        )}
+                        {!leadership.whatsapp && !leadership.instagram && (
+                          <span className="text-xs text-muted-foreground">No social links set — click Edit to add WhatsApp & Instagram links.</span>
+                        )}
+                      </div>
                     </div>
                   )}
                 </div>
