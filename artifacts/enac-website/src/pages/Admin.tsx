@@ -12,7 +12,7 @@ import {
   Cpu, Bot, Globe, Code2, Plus, Trash2, ImageOff, MapPin, Instagram, MessageCircle
 } from "lucide-react";
 
-const ADMIN_EMAIL = "2025btece008@curaj.ac.in";
+const ADMIN_EMAILS = ["2025btece008@curaj.ac.in", "enac@curaj.ac.in"];
 
 const CLUB_IDS = ["aiml", "robotics", "webdev", "cyber", "competitive"];
 const CLUB_NAMES: Record<string, string> = {
@@ -107,13 +107,13 @@ export default function Admin() {
   const [deletingEventId, setDeletingEventId] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!loading && (!user || user.email !== ADMIN_EMAIL)) {
+    if (!loading && (!user || !ADMIN_EMAILS.includes(user.email ?? ""))) {
       navigate("/");
     }
   }, [user, loading, navigate]);
 
   useEffect(() => {
-    if (!user || user.email !== ADMIN_EMAIL) return;
+    if (!user || !ADMIN_EMAILS.includes(user.email ?? "")) return;
     fetchMembers();
     fetchClubLeadership();
     fetchCoreTeam();
@@ -341,7 +341,7 @@ export default function Admin() {
     );
   }
 
-  if (!user || user.email !== ADMIN_EMAIL) return null;
+  if (!user || !ADMIN_EMAILS.includes(user.email ?? "")) return null;
 
   return (
     <div className="min-h-screen pt-24 pb-20 px-4">

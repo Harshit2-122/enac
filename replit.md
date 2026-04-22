@@ -59,7 +59,7 @@ React + Vite + Firebase website for ENAC (Engineers Network at CURAJ).
 - **Database**: Firestore — `users/{uid}` stores name, email, department, branch, clubsJoined[], createdAt
 - **Club leadership**: Stored in Firestore `clubLeadership/{clubId}` — updatable by admin
 - **Core team**: Stored in Firestore `settings/coreTeam` — updatable by admin
-- **Admin email**: `2025btece008@curaj.ac.in` — has access to `/admin` panel
+- **Admin email**: `2025btece008@curaj.ac.in, enac@curaj.ac.in` — has access to `/admin` panel
 - **5 Technical Clubs**: aiml, robotics, webdev, cyber, competitive (Civil/Electrical/Mechanical removed)
 - **Club leadership structure**: President, Vice President, Faculty Advisor per club
 - **Stats**: 5 Technical Clubs, 250+ Active Members, 20+ Yearly Events, 15+ Industry Partners

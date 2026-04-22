@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useAuth } from "@/contexts/AuthContext";
 
-const ADMIN_EMAIL = "2025btece008@curaj.ac.in";
+const ADMIN_EMAILS = ["2025btece008@curaj.ac.in", "enac@curaj.ac.in"];
 
 const RULEBOOK_URL = "https://drive.google.com/drive/folders/1ahtDnT9LEL2Jxk7iax7oeMHxI3fGK_v2?usp=drive_link";
 
@@ -25,7 +25,7 @@ export function Navbar() {
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const { theme, toggleTheme } = useTheme();
   const { user, logout } = useAuth();
-  const isAdmin = user?.email === ADMIN_EMAIL;
+  const isAdmin = ADMIN_EMAILS.includes(user?.email ?? "");
 
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 20);
