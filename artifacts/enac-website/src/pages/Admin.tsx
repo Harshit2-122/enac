@@ -148,15 +148,16 @@ export default function Admin() {
   };
 
   const fetchCoreTeam = async () => {
-    const snap = await getDoc(doc(db, "settings", "coreTeam"));
-    if (snap.exists()) {
-      setCoreTeam(snap.data().members ?? []);
-    } else {
-      setCoreTeam([
-        { name: "Core Member 1", role: "President", photo: "" },
-        { name: "Core Member 2", role: "Vice President", photo: "" },
-        { name: "Core Member 3", role: "Secretary", photo: "" },
-      ]);
+    try {
+      const snap = await getDoc(doc(db, "settings", "coreTeam"));
+      if (snap.exists()) {
+        setCoreTeam(snap.data().members ?? []);
+      } else {
+        setCoreTeam([]);
+      }
+    } catch (err) {
+      console.error("fetchCoreTeam error:", err);
+      setCoreTeam([]);
     }
   };
 
@@ -183,23 +184,39 @@ export default function Admin() {
     } else {
       updated[editingTeamIndex] = editTeamMember;
     }
-    await setDoc(doc(db, "settings", "coreTeam"), { members: updated });
-    setCoreTeam(updated);
-    setEditingTeamIndex(null);
-    setSavingTeam(false);
+    try {
+      await setDoc(doc(db, "settings", "coreTeam"), { members: updated });
+      setCoreTeam(updated);
+      setEditingTeamIndex(null);
+    } catch (err: unknown) {
+      console.error("Save core team error:", err);
+      alert("Failed to save core team member. Please make sure your Firestore rules allow admin writes to 'settings/coreTeam'.\n\n" + ((err as { message?: string })?.message ?? "Unknown error"));
+    } finally {
+      setSavingTeam(false);
+    }
   };
 
   const handleRemoveTeamMember = async (index: number) => {
     const updated = coreTeam.filter((_, i) => i !== index);
-    await setDoc(doc(db, "settings", "coreTeam"), { members: updated });
-    setCoreTeam(updated);
+    try {
+      await setDoc(doc(db, "settings", "coreTeam"), { members: updated });
+      setCoreTeam(updated);
+    } catch (err: unknown) {
+      console.error("Remove core team error:", err);
+      alert("Failed to remove member. " + ((err as { message?: string })?.message ?? ""));
+    }
   };
 
   const fetchAdvisoryBoard = async () => {
-    const snap = await getDoc(doc(db, "settings", "advisoryBoard"));
-    if (snap.exists()) {
-      setAdvisoryBoard(snap.data().members ?? []);
-    } else {
+    try {
+      const snap = await getDoc(doc(db, "settings", "advisoryBoard"));
+      if (snap.exists()) {
+        setAdvisoryBoard(snap.data().members ?? []);
+      } else {
+        setAdvisoryBoard([]);
+      }
+    } catch (err) {
+      console.error("fetchAdvisoryBoard error:", err);
       setAdvisoryBoard([]);
     }
   };
@@ -213,16 +230,27 @@ export default function Admin() {
     } else {
       updated[editingAdvisoryIndex] = editAdvisoryMember;
     }
-    await setDoc(doc(db, "settings", "advisoryBoard"), { members: updated });
-    setAdvisoryBoard(updated);
-    setEditingAdvisoryIndex(null);
-    setSavingAdvisory(false);
+    try {
+      await setDoc(doc(db, "settings", "advisoryBoard"), { members: updated });
+      setAdvisoryBoard(updated);
+      setEditingAdvisoryIndex(null);
+    } catch (err: unknown) {
+      console.error("Save advisory error:", err);
+      alert("Failed to save advisor. Please make sure your Firestore rules allow admin writes to 'settings/advisoryBoard'.\n\n" + ((err as { message?: string })?.message ?? "Unknown error"));
+    } finally {
+      setSavingAdvisory(false);
+    }
   };
 
   const handleRemoveAdvisoryMember = async (index: number) => {
     const updated = advisoryBoard.filter((_, i) => i !== index);
-    await setDoc(doc(db, "settings", "advisoryBoard"), { members: updated });
-    setAdvisoryBoard(updated);
+    try {
+      await setDoc(doc(db, "settings", "advisoryBoard"), { members: updated });
+      setAdvisoryBoard(updated);
+    } catch (err: unknown) {
+      console.error("Remove advisory error:", err);
+      alert("Failed to remove advisor. " + ((err as { message?: string })?.message ?? ""));
+    }
   };
 
   const fetchEvents = async () => {
@@ -254,6 +282,9 @@ export default function Admin() {
       setShowEventForm(false);
       setEditingEvent(null);
       setEventForm(emptyEvent);
+    } catch (err: unknown) {
+      console.error("Save event error:", err);
+      alert("Failed to save event. Please make sure your Firestore rules allow admin writes to the 'events' collection.\n\n" + ((err as { message?: string })?.message ?? "Unknown error"));
     } finally {
       setSavingEvent(false);
     }
@@ -261,9 +292,15 @@ export default function Admin() {
 
   const handleDeleteEvent = async (eventId: string) => {
     setDeletingEventId(eventId);
-    await deleteDoc(doc(db, "events", eventId));
-    setEvents((prev) => prev.filter((e) => e.id !== eventId));
-    setDeletingEventId(null);
+    try {
+      await deleteDoc(doc(db, "events", eventId));
+      setEvents((prev) => prev.filter((e) => e.id !== eventId));
+    } catch (err: unknown) {
+      console.error("Delete event error:", err);
+      alert("Failed to delete event. " + ((err as { message?: string })?.message ?? ""));
+    } finally {
+      setDeletingEventId(null);
+    }
   };
 
   const openEditEvent = (event: Event) => {

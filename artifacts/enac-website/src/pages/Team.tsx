@@ -17,13 +17,18 @@ export default function Team() {
 
   useEffect(() => {
     const fetch = async () => {
-      const [coreSnap, advisorySnap] = await Promise.all([
-        getDoc(doc(db, "settings", "coreTeam")),
-        getDoc(doc(db, "settings", "advisoryBoard")),
-      ]);
-      setCoreTeam(coreSnap.exists() ? (coreSnap.data().members ?? []) : []);
-      setAdvisoryBoard(advisorySnap.exists() ? (advisorySnap.data().members ?? []) : []);
-      setLoading(false);
+      try {
+        const [coreSnap, advisorySnap] = await Promise.all([
+          getDoc(doc(db, "settings", "coreTeam")),
+          getDoc(doc(db, "settings", "advisoryBoard")),
+        ]);
+        setCoreTeam(coreSnap.exists() ? (coreSnap.data().members ?? []) : []);
+        setAdvisoryBoard(advisorySnap.exists() ? (advisorySnap.data().members ?? []) : []);
+      } catch (err) {
+        console.error("Failed to load team data:", err);
+      } finally {
+        setLoading(false);
+      }
     };
     fetch();
   }, []);
