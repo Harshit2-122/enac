@@ -1,18 +1,49 @@
 import { useState, useRef } from "react";
-import { ref as storageRef, uploadBytes, getDownloadURL } from "firebase/storage";
-import { getStorageSafe } from "@/lib/firebase";
 import { Upload, Loader2, X } from "lucide-react";
 
 interface PhotoUploadProps {
   value: string;
   onChange: (url: string) => void;
-  folder: string;
+  folder?: string;
   label?: string;
 }
 
-export function PhotoUpload({ value, onChange, folder, label = "Photo" }: PhotoUploadProps) {
+async function compressImage(file: File, maxSize = 600, quality = 0.78): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const img = new Image();
+      img.onload = () => {
+        let { width, height } = img;
+        if (width > height && width > maxSize) {
+          height = Math.round((height * maxSize) / width);
+          width = maxSize;
+        } else if (height > maxSize) {
+          width = Math.round((width * maxSize) / height);
+          height = maxSize;
+        }
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) {
+          reject(new Error("Canvas not supported"));
+          return;
+        }
+        ctx.drawImage(img, 0, 0, width, height);
+        const dataUrl = canvas.toDataURL("image/jpeg", quality);
+        resolve(dataUrl);
+      };
+      img.onerror = () => reject(new Error("Could not load image"));
+      img.src = reader.result as string;
+    };
+    reader.onerror = () => reject(new Error("Could not read file"));
+    reader.readAsDataURL(file);
+  });
+}
+
+export function PhotoUpload({ value, onChange, label = "Photo" }: PhotoUploadProps) {
   const [uploading, setUploading] = useState(false);
-  const [progress, setProgress] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFile = async (file: File) => {
@@ -21,32 +52,26 @@ export function PhotoUpload({ value, onChange, folder, label = "Photo" }: PhotoU
       alert("Please select an image file (JPG, PNG, WebP, etc.)");
       return;
     }
-    if (file.size > 5 * 1024 * 1024) {
-      alert("Image must be smaller than 5 MB.");
+    if (file.size > 8 * 1024 * 1024) {
+      alert("Original image too large. Please choose one under 8 MB.");
       return;
     }
 
     setUploading(true);
-    setProgress(10);
     try {
-      const ext = file.name.split(".").pop() ?? "jpg";
-      const filename = `${folder}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
-      const ref = storageRef(getStorageSafe(), filename);
-      setProgress(40);
-      await uploadBytes(ref, file);
-      setProgress(80);
-      const url = await getDownloadURL(ref);
-      setProgress(100);
-      onChange(url);
+      let dataUrl = await compressImage(file, 600, 0.78);
+      if (dataUrl.length > 700_000) {
+        dataUrl = await compressImage(file, 480, 0.7);
+      }
+      if (dataUrl.length > 700_000) {
+        dataUrl = await compressImage(file, 360, 0.6);
+      }
+      onChange(dataUrl);
     } catch (err: unknown) {
-      console.error("Photo upload error:", err);
-      alert(
-        "Photo upload failed. Make sure Firebase Storage is enabled and the storage rules allow admin uploads.\n\n" +
-          ((err as { message?: string })?.message ?? "Unknown error")
-      );
+      console.error("Photo processing error:", err);
+      alert("Could not process image. " + ((err as { message?: string })?.message ?? ""));
     } finally {
       setUploading(false);
-      setProgress(0);
       if (fileInputRef.current) fileInputRef.current.value = "";
     }
   };
@@ -86,7 +111,7 @@ export function PhotoUpload({ value, onChange, folder, label = "Photo" }: PhotoU
           {uploading ? (
             <>
               <Loader2 className="w-4 h-4 animate-spin" />
-              Uploading {progress}%
+              Processing…
             </>
           ) : (
             <>
@@ -99,7 +124,7 @@ export function PhotoUpload({ value, onChange, folder, label = "Photo" }: PhotoU
         <input
           type="url"
           placeholder="…or paste an image URL"
-          value={value}
+          value={value.startsWith("data:") ? "" : value}
           onChange={(e) => onChange(e.target.value)}
           className="flex-1 px-3 py-2.5 rounded-xl border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
         />
@@ -115,7 +140,9 @@ export function PhotoUpload({ value, onChange, folder, label = "Photo" }: PhotoU
           if (file) handleFile(file);
         }}
       />
-      <p className="mt-1 text-[10.5px] text-muted-foreground">Max 5 MB. JPG, PNG, or WebP recommended.</p>
+      <p className="mt-1 text-[10.5px] text-muted-foreground">
+        Photos are auto-resized and saved with the member. Max 8 MB original.
+      </p>
     </div>
   );
 }
