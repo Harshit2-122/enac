@@ -6,6 +6,7 @@ import {
   collection, getDocs, doc, getDoc, setDoc, addDoc, deleteDoc, serverTimestamp, orderBy, query
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
+import { PhotoUpload } from "@/components/PhotoUpload";
 import {
   Users, Shield, RefreshCw, Download, User, Mail, GraduationCap,
   Building2, Calendar, Edit2, Save, X, ChevronDown, ChevronUp,
@@ -776,13 +777,11 @@ export default function Admin() {
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold text-muted-foreground mb-1.5">Photo URL</label>
-                    <input
-                      type="url"
-                      placeholder="https://..."
+                    <PhotoUpload
+                      label="Photo"
                       value={editTeamMember.photo}
-                      onChange={(e) => setEditTeamMember((prev) => ({ ...prev, photo: e.target.value }))}
-                      className="w-full px-3 py-2.5 rounded-xl border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
+                      onChange={(url) => setEditTeamMember((prev) => ({ ...prev, photo: url }))}
+                      folder="coreTeam"
                     />
                   </div>
                 </div>
@@ -880,13 +879,11 @@ export default function Admin() {
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold text-muted-foreground mb-1.5">Photo URL (optional)</label>
-                    <input
-                      type="url"
-                      placeholder="https://..."
+                    <PhotoUpload
+                      label="Photo (optional)"
                       value={editAdvisoryMember.photo}
-                      onChange={(e) => setEditAdvisoryMember((prev) => ({ ...prev, photo: e.target.value }))}
-                      className="w-full px-3 py-2.5 rounded-xl border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
+                      onChange={(url) => setEditAdvisoryMember((prev) => ({ ...prev, photo: url }))}
+                      folder="advisoryBoard"
                     />
                   </div>
                 </div>
@@ -1013,13 +1010,11 @@ export default function Admin() {
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold text-muted-foreground mb-1.5">Photo URL (optional)</label>
-                    <input
-                      type="url"
-                      placeholder="https://..."
+                    <PhotoUpload
+                      label="Photo (optional)"
                       value={eventForm.photoUrl}
-                      onChange={(e) => setEventForm((p) => ({ ...p, photoUrl: e.target.value }))}
-                      className="w-full px-3 py-2.5 rounded-xl border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
+                      onChange={(url) => setEventForm((p) => ({ ...p, photoUrl: url }))}
+                      folder="events"
                     />
                   </div>
                   <div className="md:col-span-2">
