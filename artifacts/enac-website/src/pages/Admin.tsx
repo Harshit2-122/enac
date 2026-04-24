@@ -170,10 +170,20 @@ export default function Admin() {
   const handleSaveClub = async () => {
     if (!editingClub) return;
     setSavingClub(true);
-    await setDoc(doc(db, "clubs", editingClub), editLeadership);
-    setClubLeadership((prev) => ({ ...prev, [editingClub]: editLeadership }));
-    setEditingClub(null);
-    setSavingClub(false);
+    try {
+      await setDoc(doc(db, "clubs", editingClub), editLeadership);
+      setClubLeadership((prev) => ({ ...prev, [editingClub]: editLeadership }));
+      setEditingClub(null);
+      alert("Club leadership saved successfully!");
+    } catch (err: unknown) {
+      console.error("Save club leadership error:", err);
+      alert(
+        "Failed to save club leadership. Please make sure your Firestore rules allow admin writes to the 'clubs' collection.\n\n" +
+          ((err as { message?: string })?.message ?? "Unknown error")
+      );
+    } finally {
+      setSavingClub(false);
+    }
   };
 
   const handleSaveTeamMember = async () => {

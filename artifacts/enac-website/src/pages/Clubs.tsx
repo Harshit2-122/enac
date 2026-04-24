@@ -338,7 +338,19 @@ export default function Clubs() {
       clubsJoined: arrayUnion(clubId),
     });
     setJoinedClubs((prev) => [...prev, clubId]);
-    window.open(club.whatsapp, "_blank", "noopener,noreferrer");
+
+    const link = (club.whatsapp ?? "").trim();
+    const isValidLink =
+      link.startsWith("https://chat.whatsapp.com/") &&
+      !/(GROUP_LINK|YOUR_LINK|placeholder)/i.test(link);
+
+    if (isValidLink) {
+      window.open(link, "_blank", "noopener,noreferrer");
+    } else {
+      alert(
+        `You've joined ${club.name}! The WhatsApp group link is not yet added by the admin. Please check back soon or contact ENAC.`
+      );
+    }
   };
 
   return (
