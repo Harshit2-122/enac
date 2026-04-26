@@ -9,6 +9,12 @@ const ENGINEERING_BRANCHES = [
   "B.Tech Electronics & Communication Engineering",
   "B.Tech Biomedical Engineering",
   "B.Voc",
+  "M.Tech Computer Science & Engineering",
+  "M.Tech Electronics & Communication Engineering",
+  "M.Tech Biomedical Engineering",
+  "PhD Computer Science & Engineering",
+  "PhD Electronics & Communication Engineering",
+  "PhD Biomedical Engineering",
 ];
 
 export default function Login() {

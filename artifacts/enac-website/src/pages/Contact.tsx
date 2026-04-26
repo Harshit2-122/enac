@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Send, MapPin, Mail, Phone, Loader2 } from "lucide-react";
+import { Send, MapPin, Mail, Loader2 } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -89,11 +89,9 @@ export default function Contact() {
                 </div>
                 <div className="flex items-center gap-4">
                   <Mail className="w-6 h-6 shrink-0 text-accent" />
-                  <p className="opacity-90">contact@enac-curaj.edu.in</p>
-                </div>
-                <div className="flex items-center gap-4">
-                  <Phone className="w-6 h-6 shrink-0 text-accent" />
-                  <p className="opacity-90">+91 (123) 456-7890</p>
+                  <a href="mailto:enac@curaj.ac.in" className="opacity-90 hover:opacity-100 hover:underline">
+                    enac@curaj.ac.in
+                  </a>
                 </div>
               </div>
             </div>
